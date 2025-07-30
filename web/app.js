@@ -425,6 +425,7 @@ async function loadActiveQRCodes() {
     try {
         const response = await apiRequest('/active-qrcodes');
         const activeQRs = response.data?.data || response.data || response || [];
+        console.log('Loaded active QR codes:', activeQRs); // 调试信息
         const tbody = document.getElementById('activeQRTable');
         
         if (activeQRs && activeQRs.length > 0) {
@@ -433,12 +434,12 @@ async function loadActiveQRCodes() {
                     <td>${qr.id}</td>
                     <td>${qr.name}</td>
                     <td>
-                        <code>${qr.short_code}</code>
-                        <button class="btn btn-sm btn-outline-secondary ms-2" onclick="copyToClipboard('${qr.short_code}')">
+                        <code>${qr.short_code || 'N/A'}</code>
+                        <button class="btn btn-sm btn-outline-secondary ms-2 copy-shortcode-btn" data-shortcode="${qr.short_code || ''}">
                             <i class="bi bi-clipboard"></i>
                         </button>
                     </td>
-                    <td><span class="badge bg-info">${qr.switch_rule}</span></td>
+                    <td><span class="badge bg-info">${qr.switch_rule || 'unknown'}</span></td>
                     <td>
                         <span class="badge ${qr.status ? 'bg-success' : 'bg-secondary'}">
                             ${qr.status ? '启用' : '禁用'}
@@ -700,7 +701,13 @@ async function deleteActiveQR(id) {
 
 // 复制到剪贴板
 function copyToClipboard(text) {
-    navigator.clipboard.writeText(`${BASE_URL}/r/${text}`).then(() => {
+    console.log('Copying text:', text); // 调试信息
+    console.log('BASE_URL:', BASE_URL); // 调试信息
+    
+    const fullUrl = `${BASE_URL}/r/${text}`;
+    console.log('Full URL:', fullUrl); // 调试信息
+    
+    navigator.clipboard.writeText(fullUrl).then(() => {
         showAlert('链接已复制到剪贴板！', 'success');
     }).catch(err => {
         console.error('Failed to copy: ', err);
@@ -1102,4 +1109,16 @@ function viewActiveQR(id) {
 }
 
 // 编辑活码（占位符函数）
+
+// 添加复制短码按钮的事件监听器
+document.addEventListener('DOMContentLoaded', function() {
+    // 使用事件委托处理复制按钮点击
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.copy-shortcode-btn')) {
+            const button = e.target.closest('.copy-shortcode-btn');
+            const shortcode = button.getAttribute('data-shortcode');
+            copyToClipboard(shortcode);
+        }
+    });
+});
 
