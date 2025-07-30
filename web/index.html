@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>微信活码管理系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="styles.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 0.75rem 1rem;
+            margin: 0.25rem 0;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        .main-content {
+            background-color: #f8f9fa;
+            min-height: 100vh;
+        }
+        .card {
+            border: none;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(33, 40, 50, 0.15);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0.25rem 2rem 0 rgba(33, 40, 50, 0.2);
+        }
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .qr-preview {
+            max-width: 100px;
+            height: auto;
+        }
+        .status-badge {
+            font-size: 0.75rem;
+        }
+        .navbar-brand {
+            font-weight: 600;
+            color: #495057;
+        }
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+        .login-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-card {
+            max-width: 400px;
+            width: 100%;
+        }
+        
+        /* 静态码表格列宽设置 */
+        #staticQRTable th:nth-child(1) { width: 50px; }      /* ID */
+        #staticQRTable th:nth-child(2) { width: 120px; }     /* 所属活码 */
+        #staticQRTable th:nth-child(3) { width: 100px; }     /* 名称 */
+        #staticQRTable th:nth-child(4) { width: 200px; }     /* 目标URL */
+        #staticQRTable th:nth-child(5) { width: 60px; }      /* 权重 */
+        #staticQRTable th:nth-child(6) { width: 80px; }      /* 状态 */
+        #staticQRTable th:nth-child(7) { width: 250px; }     /* 时间范围 */
+        #staticQRTable th:nth-child(8) { width: 140px; }     /* 创建时间 */
+        #staticQRTable th:nth-child(9) { width: 140px; }     /* 操作 */
+        
+        #staticQRTable td:nth-child(1) { width: 50px; }      /* ID */
+        #staticQRTable td:nth-child(2) { width: 120px; }     /* 所属活码 */
+        #staticQRTable td:nth-child(3) { width: 100px; }     /* 名称 */
+        #staticQRTable td:nth-child(4) { width: 200px; word-break: break-all; }     /* 目标URL */
+        #staticQRTable td:nth-child(5) { width: 60px; }      /* 权重 */
+        #staticQRTable td:nth-child(6) { width: 80px; }      /* 状态 */
+        #staticQRTable td:nth-child(7) { width: 250px; white-space: nowrap; }     /* 时间范围 */
+        #staticQRTable td:nth-child(8) { width: 140px; }     /* 创建时间 */
+        #staticQRTable td:nth-child(9) { width: 140px; }     /* 操作 */
+        
+        /* 表格整体样式优化 */
+        .table-responsive {
+            min-width: 100%;
+        }
+        
+        /* 确保表格有足够的宽度 */
+        .table {
+            min-width: 1200px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 登录页面 -->
+    <div id="loginPage" class="login-container">
+        <div class="login-card">
+            <div class="card">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <i class="bi bi-qr-code-scan login-icon"></i>
+                        <h3 class="mt-3">微信活码管理</h3>
+                        <p class="text-muted">登录到管理后台</p>
+                    </div>
+                    <form id="loginForm">
+                        <div class="mb-3">
+                            <label class="form-label">用户名</label>
+                            <input type="text" class="form-control" id="username" placeholder="请输入用户名" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">密码</label>
+                            <input type="password" class="form-control" id="password" placeholder="请输入密码" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">登录</button>
+                    </form>
+                    <div class="text-center mt-3">
+                        <small class="text-muted">还没有账号？<a href="#" id="showRegister">立即注册</a></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 注册页面 -->
+    <div id="registerPage" class="login-container hidden">
+        <div class="login-card">
+            <div class="card">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <i class="bi bi-person-plus register-icon"></i>
+                        <h3 class="mt-3">用户注册</h3>
+                        <p class="text-muted">创建新账号</p>
+                    </div>
+                    <form id="registerForm">
+                        <div class="mb-3">
+                            <label class="form-label">用户名</label>
+                            <input type="text" class="form-control" id="regUsername" placeholder="请输入用户名" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">密码</label>
+                            <input type="password" class="form-control" id="regPassword" placeholder="请输入密码" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">确认密码</label>
+                            <input type="password" class="form-control" id="regConfirmPassword" placeholder="请再次输入密码" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">注册</button>
+                    </form>
+                    <div class="text-center mt-3">
+                        <small class="text-muted">已有账号？<a href="#" id="showLogin">立即登录</a></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主界面 -->
+    <div id="mainApp" class="main-app-hidden">
+        <div class="container-fluid">
+            <div class="row">
+                <!-- 侧边栏 -->
+                <div class="col-md-3 col-lg-2 sidebar px-0">
+                    <div class="p-3">
+                        <h5 class="text-white mb-4">
+                            <i class="bi bi-qr-code-scan me-2"></i>
+                            活码管理
+                        </h5>
+                        <nav class="nav flex-column">
+                            <a class="nav-link active" href="#" data-section="dashboard">
+                                <i class="bi bi-speedometer2 me-2"></i>仪表盘
+                            </a>
+                            <a class="nav-link" href="#" data-section="active-qrcodes">
+                                <i class="bi bi-qr-code me-2"></i>活码管理
+                            </a>
+                            <a class="nav-link" href="#" data-section="static-qrcodes">
+                                <i class="bi bi-link-45deg me-2"></i>静态码管理
+                            </a>
+                            <a class="nav-link" href="#" data-section="statistics">
+                                <i class="bi bi-graph-up me-2"></i>统计分析
+                            </a>
+                            <a class="nav-link" href="#" data-section="settings">
+                                <i class="bi bi-gear me-2"></i>系统设置
+                            </a>
+                            <hr class="my-3 sidebar-divider">
+                            <a class="nav-link" href="#" onclick="logout()">
+                                <i class="bi bi-box-arrow-right me-2"></i>退出登录
+                            </a>
+                        </nav>
+                    </div>
+                </div>
+
+                <!-- 主内容区 -->
+                <div class="col-md-9 col-lg-10 main-content p-0">
+                    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
+                        <div class="container-fluid">
+                            <span class="navbar-brand mb-0 h1">微信活码管理系统</span>
+                            <div class="d-flex">
+                                <span class="navbar-text me-3">
+                                    欢迎，<span id="currentUser">管理员</span>
+                                </span>
+                                <button class="btn btn-outline-primary btn-sm" onclick="refreshData()">
+                                    <i class="bi bi-arrow-clockwise"></i> 刷新
+                                </button>
+                            </div>
+                        </div>
+                    </nav>
+
+                    <div class="p-4">
+                        <!-- 仪表盘 -->
+                        <div id="dashboard" class="content-section active">
+                            <h4 class="mb-4">系统概览</h4>
+                            <div class="row mb-4">
+                                <div class="col-md-3 mb-3">
+                                    <div class="card stats-card">
+                                        <div class="card-body text-center">
+                                            <i class="bi bi-qr-code stats-icon"></i>
+                                            <h3 class="mt-2" id="totalActiveQR">0</h3>
+                                            <p class="mb-0">活码总数</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <div class="card stats-card">
+                                        <div class="card-body text-center">
+                                            <i class="bi bi-link-45deg stats-icon"></i>
+                                            <h3 class="mt-2" id="totalStaticQR">0</h3>
+                                            <p class="mb-0">静态码总数</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <div class="card stats-card">
+                                        <div class="card-body text-center">
+                                            <i class="bi bi-eye stats-icon"></i>
+                                            <h3 class="mt-2" id="totalScans">0</h3>
+                                            <p class="mb-0">总扫描次数</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <div class="card text-white user-stats-card">
+                                        <div class="card-body text-center">
+                                            <i class="bi bi-people stats-icon"></i>
+                                            <h3 class="mt-2" id="totalUsers">0</h3>
+                                            <p class="mb-0">注册用户</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">最近活动</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div id="recentActivity">
+                                                <div class="text-center text-muted py-4">
+                                                    <i class="bi bi-clock"></i> 正在加载活动记录...
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">热门活码</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div id="topQRCodes">
+                                                <div class="text-center text-muted py-4">
+                                                    <i class="bi bi-graph-up"></i> 正在加载统计数据...
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 活码管理 -->
+                        <div id="active-qrcodes" class="content-section">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h4>活码管理</h4>
+                                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createActiveQRModal">
+                                    <i class="bi bi-plus-circle me-1"></i>创建活码
+                                </button>
+                            </div>
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>ID</th>
+                                                    <th>名称</th>
+                                                    <th>短码</th>
+                                                    <th>切换规则</th>
+                                                    <th>状态</th>
+                                                    <th>二维码</th>
+                                                    <th>创建时间</th>
+                                                    <th>操作</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="activeQRTable">
+                                                <tr>
+                                                    <td colspan="8" class="text-center text-muted py-4">
+                                                        <i class="bi bi-hourglass-split"></i> 正在加载数据...
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 静态码管理 -->
+                        <div id="static-qrcodes" class="content-section">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h4 class="mb-0">静态码管理</h4>
+                                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#staticQRModal">
+                                    <i class="bi bi-plus-circle me-2"></i>创建静态码
+                                </button>
+                            </div>
+                            
+                            <!-- 过滤器 -->
+                            <div class="card mb-4">
+                                <div class="card-body">
+                                    <div class="row g-3">
+                                        <div class="col-md-4">
+                                            <label class="form-label">所属活码</label>
+                                            <select class="form-select" id="filterActiveQR">
+                                                <option value="">全部活码</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label">状态</label>
+                                            <select class="form-select" id="filterStatus">
+                                                <option value="">全部状态</option>
+                                                <option value="1">启用</option>
+                                                <option value="0">禁用</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label">名称搜索</label>
+                                            <input type="text" class="form-control" id="filterName" placeholder="输入静态码名称">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label">&nbsp;</label>
+                                            <button type="button" class="btn btn-outline-secondary w-100" onclick="filterStaticQRCodes()">
+                                                <i class="bi bi-search"></i> 搜索
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>ID</th>
+                                                    <th>所属活码</th>
+                                                    <th>名称</th>
+                                                    <th>目标URL</th>
+                                                    <th>权重</th>
+                                                    <th>状态</th>
+                                                    <th>时间范围</th>
+                                                    <th>创建时间</th>
+                                                    <th>操作</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="staticQRTable">
+                                                <tr>
+                                                    <td colspan="9" class="text-center text-muted py-4">
+                                                        <i class="bi bi-hourglass-split"></i> 正在加载数据...
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <!-- 分页 -->
+                                    <nav aria-label="分页导航" class="mt-3">
+                                        <ul class="pagination justify-content-center" id="staticQRPagination">
+                                        </ul>
+                                    </nav>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 统计分析 -->
+                        <div id="statistics" class="content-section">
+                            <h4 class="mb-4">统计分析</h4>
+                            <div class="row">
+                                <div class="col-md-6 mb-4">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">扫描趋势</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <canvas id="scanTrendChart" width="400" height="200"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-4">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">流量分布</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <canvas id="trafficDistChart" width="400" height="200"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 系统设置 -->
+                        <div id="settings" class="content-section">
+                            <h4 class="mb-4">系统设置</h4>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">基本设置</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <form>
+                                                <div class="mb-3">
+                                                    <label class="form-label">系统名称</label>
+                                                    <input type="text" class="form-control" value="微信活码管理系统">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">API基础URL</label>
+                                                    <input type="text" class="form-control" value="http://localhost:8083">
+                                                </div>
+                                                <button type="submit" class="btn btn-primary">保存设置</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">账户设置</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <form>
+                                                <div class="mb-3">
+                                                    <label class="form-label">当前密码</label>
+                                                    <input type="password" class="form-control">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">新密码</label>
+                                                    <input type="password" class="form-control">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">确认新密码</label>
+                                                    <input type="password" class="form-control">
+                                                </div>
+                                                <button type="submit" class="btn btn-primary">修改密码</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 创建活码模态框 -->
+    <div class="modal fade" id="createActiveQRModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">创建活码</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" title="关闭"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="createActiveQRForm">
+                        <div class="mb-3">
+                            <label class="form-label">活码名称</label>
+                            <input type="text" class="form-control" id="activeQRName" placeholder="请输入活码名称" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">切换规则</label>
+                            <select class="form-select" id="switchRule" title="选择切换规则" required>
+                                <option value="weight">权重分配</option>
+                                <option value="random">随机分配</option>
+                                <option value="time">时间分配</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">描述</label>
+                            <textarea class="form-control" id="activeQRDesc" rows="3" placeholder="请输入活码描述（可选）"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="createActiveQR()">创建</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 查看活码详情模态框 -->
+    <div class="modal fade" id="viewActiveQRModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">活码详情</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" title="关闭"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table">
+                                <tr>
+                                    <th>名称：</th>
+                                    <td id="viewActiveQRName"></td>
+                                </tr>
+                                <tr>
+                                    <th>短码：</th>
+                                    <td><code id="viewActiveQRShortCode"></code></td>
+                                </tr>
+                                <tr>
+                                    <th>切换规则：</th>
+                                    <td><span class="badge bg-info" id="viewActiveQRRule"></span></td>
+                                </tr>
+                                <tr>
+                                    <th>状态：</th>
+                                    <td><span class="badge" id="viewActiveQRStatus"></span></td>
+                                </tr>
+                                <tr>
+                                    <th>创建时间：</th>
+                                    <td id="viewActiveQRCreated"></td>
+                                </tr>
+                                <tr>
+                                    <th>完整链接：</th>
+                                    <td><a href="#" id="viewActiveQRLink" target="_blank" class="text-decoration-none"></a></td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>描述：</h6>
+                            <p id="viewActiveQRDesc" class="text-muted"></p>
+                            
+                            <h6>关联静态码：</h6>
+                            <div id="viewStaticQRList" class="list-group"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑活码模态框 -->
+    <div class="modal fade" id="editActiveQRModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">编辑活码</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" title="关闭"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editActiveQRForm">
+                        <input type="hidden" id="editActiveQRId">
+                        <div class="mb-3">
+                            <label class="form-label">活码名称</label>
+                            <input type="text" class="form-control" id="editActiveQRName" placeholder="请输入活码名称" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">切换规则</label>
+                            <select class="form-select" id="editSwitchRule" title="选择切换规则" required>
+                                <option value="weight">权重分配</option>
+                                <option value="random">随机分配</option>
+                                <option value="time">时间分配</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">描述</label>
+                            <textarea class="form-control" id="editActiveQRDesc" rows="3" placeholder="请输入活码描述"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="saveActiveQREdit()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 查看静态码详情模态框 -->
+    <div class="modal fade" id="viewStaticQRModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">静态码详情</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" title="关闭"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table">
+                                <tr>
+                                    <th>名称：</th>
+                                    <td id="viewStaticQRName"></td>
+                                </tr>
+                                <tr>
+                                    <th>目标URL：</th>
+                                    <td><a href="#" id="viewStaticQRURL" target="_blank" class="text-decoration-none"></a></td>
+                                </tr>
+                                <tr>
+                                    <th>权重：</th>
+                                    <td><span class="badge bg-primary" id="viewStaticQRWeight"></span></td>
+                                </tr>
+                                <tr>
+                                    <th>状态：</th>
+                                    <td><span class="badge" id="viewStaticQRStatus"></span></td>
+                                </tr>
+                                <tr>
+                                    <th>创建时间：</th>
+                                    <td id="viewStaticQRCreated"></td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>生效时间范围：</h6>
+                            <p id="viewStaticQRTimeRange" class="text-muted"></p>
+                            
+                            <h6>允许地区：</h6>
+                            <p id="viewStaticQRRegions" class="text-muted"></p>
+                            
+                            <h6>允许设备：</h6>
+                            <p id="viewStaticQRDevices" class="text-muted"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 创建静态码模态框 -->
+    <div class="modal fade" id="staticQRModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">创建静态码</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" title="关闭"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="createStaticQRForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">所属活码 <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="staticQRActiveQRId" required>
+                                        <option value="">请选择活码</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">名称 <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="staticQRName" placeholder="请输入静态码名称" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">目标URL <span class="text-danger">*</span></label>
+                                    <input type="url" class="form-control" id="staticQRTargetURL" placeholder="https://example.com" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">权重</label>
+                                    <input type="number" class="form-control" id="staticQRWeight" value="1" min="1" max="100">
+                                    <div class="form-text">权重越高，被选中的概率越大</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">状态</label>
+                                    <select class="form-select" id="staticQRStatus">
+                                        <option value="1">启用</option>
+                                        <option value="0">禁用</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">生效开始时间</label>
+                                    <div class="input-group">
+                                        <input type="datetime-local" class="form-control" id="staticQRStartTime">
+                                        <button class="btn btn-outline-secondary" type="button" onclick="clearTimeField('staticQRStartTime')" title="清空时间">
+                                            <i class="bi bi-x-circle"></i>
+                                        </button>
+                                    </div>
+                                    <div class="form-text">留空表示立即生效（北京时间）</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">生效结束时间</label>
+                                    <div class="input-group">
+                                        <input type="datetime-local" class="form-control" id="staticQREndTime">
+                                        <button class="btn btn-outline-secondary" type="button" onclick="clearTimeField('staticQREndTime')" title="清空时间">
+                                            <i class="bi bi-x-circle"></i>
+                                        </button>
+                                    </div>
+                                    <div class="form-text">留空表示永久有效（北京时间）</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">允许的地区</label>
+                                    <input type="text" class="form-control" id="staticQRRegions" placeholder="如：北京,上海,广州">
+                                    <div class="form-text">用逗号分隔，留空表示不限制</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">允许的设备</label>
+                                    <input type="text" class="form-control" id="staticQRDevices" placeholder="如：Android,iOS,PC">
+                                    <div class="form-text">用逗号分隔，留空表示不限制</div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary" form="createStaticQRForm">创建</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑静态码模态框 -->
+    <div class="modal fade" id="editStaticQRModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">编辑静态码</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" title="关闭"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editStaticQRForm">
+                        <input type="hidden" id="editStaticQRId">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">名称</label>
+                                    <input type="text" class="form-control" id="editStaticQRName" placeholder="请输入静态码名称" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">目标URL</label>
+                                    <input type="url" class="form-control" id="editStaticQRURL" placeholder="https://example.com" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">权重</label>
+                                    <input type="number" class="form-control" id="editStaticQRWeight" min="1" value="1" title="权重值，用于分配流量">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">开始时间</label>
+                                    <div class="input-group">
+                                        <input type="datetime-local" class="form-control" id="editStaticQRStartTime" title="选择生效开始时间（北京时间）">
+                                        <button class="btn btn-outline-secondary" type="button" onclick="clearTimeField('editStaticQRStartTime')" title="清空时间">
+                                            <i class="bi bi-x-circle"></i>
+                                        </button>
+                                    </div>
+                                    <div class="form-text">留空表示立即生效（北京时间）</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">结束时间</label>
+                                    <div class="input-group">
+                                        <input type="datetime-local" class="form-control" id="editStaticQREndTime" title="选择生效结束时间（北京时间）">
+                                        <button class="btn btn-outline-secondary" type="button" onclick="clearTimeField('editStaticQREndTime')" title="清空时间">
+                                            <i class="bi bi-x-circle"></i>
+                                        </button>
+                                    </div>
+                                    <div class="form-text">留空表示永久有效（北京时间）</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">允许地区（逗号分隔）</label>
+                                    <input type="text" class="form-control" id="editStaticQRRegions" placeholder="如：北京,上海,广州">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">允许设备（逗号分隔）</label>
+                                    <input type="text" class="form-control" id="editStaticQRDevices" placeholder="如：mobile,desktop,tablet">
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="saveStaticQREdit()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

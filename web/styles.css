@@ -1,0 +1,283 @@
+/* 全局样式重置 */
+* {
+    box-sizing: border-box;
+}
+
+/* 隐藏的页面样式 */
+.hidden {
+    display: none !important;
+}
+
+/* 登录页面样式 */
+.login-icon {
+    font-size: 3rem;
+    color: #667eea;
+}
+
+.register-icon {
+    font-size: 3rem;
+    color: #667eea;
+}
+
+/* 主界面隐藏样式 */
+.main-app-hidden {
+    display: none;
+}
+
+/* 侧边栏分割线样式 */
+.sidebar-divider {
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* 统计卡片图标样式 */
+.stats-icon {
+    font-size: 2rem;
+}
+
+.stats-icon-alt {
+    font-size: 2rem;
+}
+
+/* 用户统计卡片背景 */
+.user-stats-card {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+/* 表单控件样式 */
+.form-control::placeholder {
+    color: #6c757d;
+    opacity: 0.6;
+}
+
+.form-select:focus,
+.form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+/* 按钮样式增强 */
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+    transform: translateY(-1px);
+}
+
+/* 导航链接活动状态 */
+.nav-link.active {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: white !important;
+}
+
+/* 卡片悬停效果 */
+.card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.25rem 2rem 0 rgba(33, 40, 50, 0.2);
+}
+
+/* 数据表格样式 */
+.table th {
+    background-color: #f8f9fa;
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+}
+
+/* 二维码预览样式 */
+.qr-code-preview {
+    max-width: 100px;
+    height: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+}
+
+/* 状态徽章样式 */
+.badge-status {
+    font-size: 0.75rem;
+    padding: 0.35em 0.65em;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: -100%;
+        width: 250px;
+        height: 100vh;
+        z-index: 1050;
+        transition: left 0.3s ease;
+    }
+    
+    .sidebar.show {
+        left: 0;
+    }
+    
+    .main-content {
+        margin-left: 0;
+    }
+    
+    .stats-icon {
+        font-size: 1.5rem;
+    }
+    
+    .login-card {
+        margin: 1rem;
+    }
+}
+
+/* 加载动画 */
+.loading-spinner {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid #f3f3f3;
+    border-radius: 50%;
+    border-top: 2px solid #667eea;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* 工具提示样式 */
+.tooltip-inner {
+    background-color: #495057;
+    color: white;
+}
+
+/* 模态框样式增强 */
+.modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.modal-header .btn-close {
+    filter: invert(1);
+}
+
+/* 表单验证样式 */
+.form-control.is-invalid {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+.form-control.is-valid {
+    border-color: #28a745;
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* 动画类 */
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.slide-in-right {
+    animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+}
+
+/* 自定义警告框样式 */
+.alert-floating {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    min-width: 300px;
+    box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.1);
+    animation: slideInRight 0.3s ease-out;
+}
+
+/* 空状态样式 */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #6c757d;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+/* 搜索框样式 */
+.search-box {
+    position: relative;
+}
+
+.search-box input {
+    padding-left: 2.5rem;
+}
+
+.search-box i {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+}
+
+/* 标签样式增强 */
+.tag {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    background-color: #e9ecef;
+    color: #495057;
+    border-radius: 0.25rem;
+    margin: 0.125rem;
+}
+
+.tag.tag-primary {
+    background-color: #667eea;
+    color: white;
+}
+
+.tag.tag-success {
+    background-color: #28a745;
+    color: white;
+}
+
+.tag.tag-warning {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.tag.tag-danger {
+    background-color: #dc3545;
+    color: white;
+}

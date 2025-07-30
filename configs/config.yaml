@@ -1,0 +1,26 @@
+server:
+  port: ":8083"
+  mode: "debug"
+  base_url: "http://localhost:8083"
+
+database:
+  sqlite_path: "./data/qrcode.db"
+
+jwt:
+  secret: "your-secret-key-change-in-production"
+  expire: 24
+
+cors:
+  allowed_origins:
+    - "*"
+  allowed_methods:
+    - "GET"
+    - "POST"
+    - "PUT"
+    - "DELETE"
+    - "OPTIONS"
+  allowed_headers:
+    - "Origin"
+    - "Content-Type"
+    - "Accept"
+    - "Authorization" 
