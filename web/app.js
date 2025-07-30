@@ -701,18 +701,110 @@ async function deleteActiveQR(id) {
 
 // 复制到剪贴板
 function copyToClipboard(text) {
+    copyToClipboardWithCallback(text, function(success) {
+        // 默认的成功/失败处理已经在函数内部完成
+    });
+}
+
+// 带回调的复制函数
+function copyToClipboardWithCallback(text, callback) {
     console.log('Copying text:', text); // 调试信息
     console.log('BASE_URL:', BASE_URL); // 调试信息
     
     const fullUrl = `${BASE_URL}/r/${text}`;
     console.log('Full URL:', fullUrl); // 调试信息
     
-    navigator.clipboard.writeText(fullUrl).then(() => {
-        showAlert('链接已复制到剪贴板！', 'success');
-    }).catch(err => {
-        console.error('Failed to copy: ', err);
-        showAlert('复制失败', 'warning');
-    });
+    // 尝试使用现代的 Clipboard API
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(fullUrl).then(() => {
+            showAlert('链接已复制到剪贴板！', 'success');
+            if (callback) callback(true);
+        }).catch(err => {
+            console.error('Clipboard API failed: ', err);
+            // 如果现代API失败，使用传统方法
+            fallbackCopyTextToClipboard(fullUrl, callback);
+        });
+    } else {
+        // 如果不支持现代API，直接使用传统方法
+        console.log('Clipboard API not available, using fallback method');
+        fallbackCopyTextToClipboard(fullUrl, callback);
+    }
+}
+
+// 传统的复制方法（兼容性更好）
+function fallbackCopyTextToClipboard(text, callback) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    
+    // 避免滚动到底部
+    textArea.style.top = '0';
+    textArea.style.left = '0';
+    textArea.style.position = 'fixed';
+    textArea.style.width = '2em';
+    textArea.style.height = '2em';
+    textArea.style.padding = '0';
+    textArea.style.border = 'none';
+    textArea.style.outline = 'none';
+    textArea.style.boxShadow = 'none';
+    textArea.style.background = 'transparent';
+    
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            showAlert('链接已复制到剪贴板！', 'success');
+            console.log('Fallback copy successful');
+            if (callback) callback(true);
+        } else {
+            showAlert('复制失败，请手动复制链接', 'warning');
+            console.log('Fallback copy failed');
+            // 显示手动复制模态框
+            showCopyLinkModal(text);
+            if (callback) callback(false);
+        }
+    } catch (err) {
+        console.error('Fallback copy error:', err);
+        showAlert('复制失败，请手动复制链接', 'warning');
+        // 显示手动复制模态框
+        showCopyLinkModal(text);
+        if (callback) callback(false);
+    }
+    
+    document.body.removeChild(textArea);
+}
+
+// 显示复制链接模态框
+function showCopyLinkModal(url) {
+    const modal = new bootstrap.Modal(document.getElementById('copyLinkModal'));
+    const input = document.getElementById('copyLinkInput');
+    input.value = url;
+    modal.show();
+    
+    // 选中输入框中的文本
+    setTimeout(() => {
+        input.select();
+        input.focus();
+    }, 300);
+}
+
+// 手动复制链接
+function manualCopyLink() {
+    const input = document.getElementById('copyLinkInput');
+    input.select();
+    
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            showAlert('链接已复制到剪贴板！', 'success');
+        } else {
+            showAlert('请使用 Ctrl+C 或 Cmd+C 复制链接', 'info');
+        }
+    } catch (err) {
+        showAlert('请使用 Ctrl+C 或 Cmd+C 复制链接', 'info');
+    }
 }
 
 // 显示提示信息
@@ -1117,7 +1209,32 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.target.closest('.copy-shortcode-btn')) {
             const button = e.target.closest('.copy-shortcode-btn');
             const shortcode = button.getAttribute('data-shortcode');
-            copyToClipboard(shortcode);
+            
+            // 添加视觉反馈
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="bi bi-check2"></i> 复制中...';
+            button.disabled = true;
+            
+            // 执行复制
+            copyToClipboardWithCallback(shortcode, function(success) {
+                // 恢复按钮状态
+                setTimeout(() => {
+                    if (success) {
+                        button.innerHTML = '<i class="bi bi-check2"></i> 已复制';
+                        button.className = 'btn btn-sm btn-success ms-2 copy-shortcode-btn';
+                    } else {
+                        button.innerHTML = '<i class="bi bi-x-circle"></i> 复制失败';
+                        button.className = 'btn btn-sm btn-danger ms-2 copy-shortcode-btn';
+                    }
+                    
+                    // 2秒后恢复原状态
+                    setTimeout(() => {
+                        button.innerHTML = originalText;
+                        button.className = 'btn btn-sm btn-outline-secondary ms-2 copy-shortcode-btn';
+                        button.disabled = false;
+                    }, 2000);
+                }, 100);
+            });
         }
     });
 

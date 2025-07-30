@@ -816,6 +816,31 @@
         </div>
     </div>
 
+    <!-- 复制链接模态框 -->
+    <div class="modal fade" id="copyLinkModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">复制链接</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" title="关闭"></button>
+                </div>
+                <div class="modal-body">
+                    <p>请手动复制以下链接：</p>
+                    <div class="input-group">
+                        <input type="text" id="copyLinkInput" class="form-control" readonly placeholder="链接将在这里显示">
+                        <button class="btn btn-outline-secondary" type="button" onclick="manualCopyLink()">
+                            <i class="bi bi-clipboard"></i> 复制
+                        </button>
+                    </div>
+                    <small class="text-muted mt-2 d-block">提示：您也可以选中链接文本并使用 Ctrl+C (Windows) 或 Cmd+C (Mac) 进行复制</small>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="assets/js/bootstrap.bundle.min.js"></script>
     <script src="assets/js/chart.min.js"></script>
     <script src="app.js"></script>
