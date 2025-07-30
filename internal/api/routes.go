@@ -59,7 +59,7 @@ func (r *Router) SetupRoutes() *gin.Engine {
 	router.StaticFile("/styles.css", "./web/styles.css")
 	router.StaticFile("/app.js", "./web/app.js")
 	router.StaticFile("/favicon.ico", "./web/favicon.ico")
-	
+
 	// 添加assets静态文件服务
 	router.Static("/assets", "./web/assets")
 
