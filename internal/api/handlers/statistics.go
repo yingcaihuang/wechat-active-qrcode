@@ -170,3 +170,39 @@ func (h *StatisticsHandler) GetRecentScanRecords(c *gin.Context) {
 		Data:    records,
 	})
 }
+
+// GetDeviceStats 获取设备类型统计
+func (h *StatisticsHandler) GetDeviceStats(c *gin.Context) {
+	deviceStats, err := h.statisticsService.GetDeviceStats()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.APIResponse{
+		Success: true,
+		Message: "Device statistics retrieved successfully",
+		Data:    deviceStats,
+	})
+}
+
+// GetRegionStats 获取地区统计
+func (h *StatisticsHandler) GetRegionStats(c *gin.Context) {
+	regionStats, err := h.statisticsService.GetRegionStats()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.APIResponse{
+		Success: true,
+		Message: "Region statistics retrieved successfully",
+		Data:    regionStats,
+	})
+}

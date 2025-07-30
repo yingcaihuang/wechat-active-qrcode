@@ -25,20 +25,20 @@ func NewParser() *Parser {
 func (p *Parser) ParseFromFile(file multipart.File, header *multipart.FileHeader) (string, error) {
 	// 读取文件内容
 	defer file.Close()
-	
+
 	// 检查文件类型
 	contentType := header.Header.Get("Content-Type")
 	if !strings.HasPrefix(contentType, "image/") {
 		return "", fmt.Errorf("文件类型不支持，请上传图片文件")
 	}
-	
+
 	// 解码图片
 	var img image.Image
 	var err error
-	
+
 	// 重置文件指针到开始位置
 	file.Seek(0, 0)
-	
+
 	if strings.Contains(contentType, "jpeg") || strings.Contains(contentType, "jpg") {
 		img, err = jpeg.Decode(file)
 	} else if strings.Contains(contentType, "png") {
@@ -48,11 +48,11 @@ func (p *Parser) ParseFromFile(file multipart.File, header *multipart.FileHeader
 		file.Seek(0, 0)
 		img, _, err = image.Decode(file)
 	}
-	
+
 	if err != nil {
 		return "", fmt.Errorf("图片解码失败: %v", err)
 	}
-	
+
 	return p.parseFromImage(img)
 }
 
@@ -62,7 +62,7 @@ func (p *Parser) ParseFromReader(reader io.Reader) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("图片解码失败: %v", err)
 	}
-	
+
 	return p.parseFromImage(img)
 }
 
@@ -73,21 +73,21 @@ func (p *Parser) parseFromImage(img image.Image) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("图片处理失败: %v", err)
 	}
-	
+
 	// 创建二维码读取器
 	qrReader := qrcode.NewQRCodeReader()
-	
+
 	// 解析二维码
 	result, err := qrReader.Decode(bmp, nil)
 	if err != nil {
 		return "", fmt.Errorf("二维码解析失败: %v", err)
 	}
-	
+
 	text := result.GetText()
 	if text == "" {
 		return "", fmt.Errorf("二维码内容为空")
 	}
-	
+
 	return text, nil
 }
 

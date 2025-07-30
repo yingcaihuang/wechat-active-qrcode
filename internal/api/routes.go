@@ -140,6 +140,8 @@ func (r *Router) SetupRoutes() *gin.Engine {
 			statistics.GET("/trends", r.statisticsHandler.GetTrendData)
 			statistics.GET("/top-qrcodes", r.statisticsHandler.GetTopQRCodes)
 			statistics.GET("/scan-records", r.statisticsHandler.GetRecentScanRecords)
+			statistics.GET("/device-stats", r.statisticsHandler.GetDeviceStats)
+			statistics.GET("/region-stats", r.statisticsHandler.GetRegionStats)
 			statistics.GET("/qrcodes/:id/stats", r.statisticsHandler.GetScanStatistics)
 			statistics.GET("/qrcodes/:id/records", r.statisticsHandler.GetScanRecords)
 		}

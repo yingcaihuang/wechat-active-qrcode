@@ -414,6 +414,10 @@ function loadSectionData(section) {
             break;
         case 'statistics':
             loadStatistics();
+            // 延迟初始化图表，确保DOM已渲染
+            setTimeout(() => {
+                initStatisticsCharts();
+            }, 100);
             break;
         default:
             break;
@@ -1190,9 +1194,9 @@ async function saveStaticQREdit() {
 
 // 加载统计数据
 function loadStatistics() {
-    // 这里可以加载图表数据
-    // 由于没有Chart.js的具体实现，先显示占位符
+    // 加载统计图表数据
     console.log('Loading statistics charts...');
+    // 图表初始化已在 loadSectionData 中处理
 }
 
 // 查看活码详情（占位符函数）
@@ -1319,6 +1323,338 @@ function loadSystemSettings() {
     } catch (e) {
         console.error('Error loading system settings:', e);
     }
+}
+
+// ===== 统计图表功能 =====
+
+// 图表实例存储
+let scanTrendChart = null;
+let trafficDistChart = null;
+
+// 初始化统计图表
+function initStatisticsCharts() {
+    initScanTrendChart();
+    initTrafficDistChart();
+    loadStatisticsData();
+}
+
+// 初始化扫描趋势图表
+function initScanTrendChart() {
+    const ctx = document.getElementById('scanTrendChart');
+    if (!ctx) return;
+
+    // 销毁已存在的图表
+    if (scanTrendChart) {
+        scanTrendChart.destroy();
+    }
+
+    scanTrendChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: '扫描次数',
+                data: [],
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: '最近7天扫描趋势'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+}
+
+// 初始化流量分布图表
+function initTrafficDistChart() {
+    const ctx = document.getElementById('trafficDistChart');
+    if (!ctx) return;
+
+    // 销毁已存在的图表
+    if (trafficDistChart) {
+        trafficDistChart.destroy();
+    }
+
+    trafficDistChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: [],
+            datasets: [{
+                data: [],
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.8)',
+                    'rgba(54, 162, 235, 0.8)',
+                    'rgba(255, 205, 86, 0.8)',
+                    'rgba(75, 192, 192, 0.8)',
+                    'rgba(153, 102, 255, 0.8)',
+                    'rgba(255, 159, 64, 0.8)'
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 205, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: '设备类型分布'
+                },
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+// 加载统计数据
+async function loadStatisticsData() {
+    try {
+        // 加载扫描趋势数据
+        await loadScanTrendData();
+        
+        // 加载流量分布数据
+        await loadTrafficDistData();
+        
+    } catch (error) {
+        console.error('Error loading statistics data:', error);
+        showToast('加载统计数据失败', 'error');
+    }
+}
+
+// 加载扫描趋势数据
+async function loadScanTrendData() {
+    try {
+        console.log('开始加载扫描趋势数据...');
+        const response = await fetch(`${API_BASE}/statistics/trends?days=7`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            }
+        });
+
+        console.log('趋势数据响应状态:', response.status);
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch trend data');
+        }
+
+        const result = await response.json();
+        console.log('趋势数据响应:', result);
+        
+        if (result.success && result.data) {
+            console.log('更新趋势图表，数据:', result.data);
+            updateScanTrendChart(result.data);
+        } else {
+            console.log('趋势数据响应不成功或无数据');
+            updateScanTrendChart([]);
+        }
+    } catch (error) {
+        console.error('Error loading scan trend data:', error);
+        // 显示空数据而不是模拟数据
+        updateScanTrendChart([]);
+    }
+}
+
+// 加载流量分布数据
+async function loadTrafficDistData() {
+    try {
+        console.log('开始加载流量分布数据...');
+        const response = await fetch(`${API_BASE}/statistics/device-stats`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            }
+        });
+
+        console.log('设备统计响应状态:', response.status);
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch device stats');
+        }
+
+        const result = await response.json();
+        console.log('设备统计响应:', result);
+        
+        if (result.success && result.data) {
+            // 格式化设备统计数据
+            const formattedStats = {};
+            Object.keys(result.data).forEach(device => {
+                const deviceName = formatDeviceName(device);
+                formattedStats[deviceName] = result.data[device];
+            });
+            console.log('格式化后的设备统计:', formattedStats);
+            updateTrafficDistChart(formattedStats);
+        } else {
+            console.log('设备统计响应不成功或无数据');
+            throw new Error('No device stats data');
+        }
+    } catch (error) {
+        console.error('Error loading traffic distribution data:', error);
+        // 显示空数据而不是模拟数据
+        updateTrafficDistChart({});
+    }
+}
+
+// 更新扫描趋势图表
+function updateScanTrendChart(trendData) {
+    console.log('updateScanTrendChart 被调用，数据:', trendData);
+    
+    if (!scanTrendChart) {
+        console.log('scanTrendChart 实例不存在');
+        return;
+    }
+    
+    if (!trendData) {
+        console.log('trendData 为空');
+        return;
+    }
+
+    const labels = [];
+    const data = [];
+
+    // 处理趋势数据
+    if (Array.isArray(trendData)) {
+        trendData.forEach(item => {
+            const dateLabel = formatDateForChart(item.date || item.day);
+            const scanCount = item.scans || item.count || 0;
+            labels.push(dateLabel);
+            data.push(scanCount);
+            console.log(`日期: ${dateLabel}, 扫描数: ${scanCount}`);
+        });
+    }
+
+    // 如果没有数据，生成最近7天的空数据
+    if (labels.length === 0) {
+        console.log('没有数据，生成空数据');
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            labels.push(formatDateForChart(date.toISOString().split('T')[0]));
+            data.push(0); // 显示0而不是随机数据
+        }
+    }
+
+    console.log('最终标签:', labels);
+    console.log('最终数据:', data);
+
+    scanTrendChart.data.labels = labels;
+    scanTrendChart.data.datasets[0].data = data;
+    scanTrendChart.update();
+    
+    console.log('趋势图表已更新');
+}
+
+// 更新流量分布图表
+function updateTrafficDistChart(deviceStats) {
+    console.log('updateTrafficDistChart 被调用，数据:', deviceStats);
+    
+    if (!trafficDistChart) {
+        console.log('trafficDistChart 实例不存在');
+        return;
+    }
+
+    const labels = Object.keys(deviceStats || {});
+    const data = Object.values(deviceStats || {});
+
+    console.log('设备标签:', labels);
+    console.log('设备数据:', data);
+
+    // 如果没有数据，显示"暂无数据"
+    if (labels.length === 0) {
+        console.log('没有设备数据，显示暂无数据');
+        labels.push('暂无数据');
+        data.push(1);
+    }
+
+    trafficDistChart.data.labels = labels;
+    trafficDistChart.data.datasets[0].data = data;
+    trafficDistChart.update();
+    
+    console.log('流量分布图表已更新');
+}
+
+// 处理设备分布数据
+function processDeviceDistribution(scanRecords) {
+    const deviceStats = {};
+    
+    if (Array.isArray(scanRecords)) {
+        scanRecords.forEach(record => {
+            const device = record.device || 'Unknown';
+            const deviceName = formatDeviceName(device);
+            deviceStats[deviceName] = (deviceStats[deviceName] || 0) + 1;
+        });
+    }
+
+    return deviceStats;
+}
+
+// 格式化设备名称
+function formatDeviceName(device) {
+    const deviceMap = {
+        'mobile': 'Mobile',
+        'desktop': 'Desktop', 
+        'tablet': 'Tablet',
+        'unknown': 'Unknown'
+    };
+    
+    return deviceMap[device.toLowerCase()] || 'Unknown';
+}
+
+// 格式化日期用于图表显示
+function formatDateForChart(dateString) {
+    const date = new Date(dateString);
+    return `${date.getMonth() + 1}/${date.getDate()}`;
+}
+
+// 生成模拟趋势数据
+function generateMockTrendData() {
+    const data = [];
+    for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        data.push({
+            date: date.toISOString().split('T')[0],
+            count: Math.floor(Math.random() * 50) + 10
+        });
+    }
+    return data;
+}
+
+// 刷新统计图表
+function refreshStatisticsCharts() {
+    loadStatisticsData();
+}
+
+// ===== 页面切换事件监听 =====
+
+// 监听统计分析选项卡切换
+function onStatisticsTabShow() {
+    // 延迟初始化图表，确保DOM已渲染
+    setTimeout(() => {
+        initStatisticsCharts();
+    }, 100);
 }
 
 // ===== 二维码上传功能 =====

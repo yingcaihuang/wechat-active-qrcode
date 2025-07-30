@@ -745,7 +745,7 @@ func (h *ActiveQRCodeHandler) ParseQRCode(c *gin.Context) {
 
 	// 创建二维码解析器
 	parser := qrcode.NewParser()
-	
+
 	// 解析二维码
 	content, err := parser.ParseFromFile(file, header)
 	if err != nil {

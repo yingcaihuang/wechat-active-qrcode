@@ -180,3 +180,59 @@ func (s *StatisticsService) GetRecentScanRecords(limit int) ([]models.ScanRecord
 
 	return records, nil
 }
+
+// GetDeviceStats 获取设备类型统计
+func (s *StatisticsService) GetDeviceStats() (map[string]int64, error) {
+	var results []struct {
+		Device string
+		Count  int64
+	}
+
+	err := s.db.Model(&models.ScanRecord{}).
+		Select("device, COUNT(*) as count").
+		Group("device").
+		Find(&results).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	deviceStats := make(map[string]int64)
+	for _, result := range results {
+		device := result.Device
+		if device == "" {
+			device = "unknown"
+		}
+		deviceStats[device] = result.Count
+	}
+
+	return deviceStats, nil
+}
+
+// GetRegionStats 获取地区统计
+func (s *StatisticsService) GetRegionStats() (map[string]int64, error) {
+	var results []struct {
+		Region string
+		Count  int64
+	}
+
+	err := s.db.Model(&models.ScanRecord{}).
+		Select("region, COUNT(*) as count").
+		Group("region").
+		Find(&results).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	regionStats := make(map[string]int64)
+	for _, result := range results {
+		region := result.Region
+		if region == "" {
+			region = "unknown"
+		}
+		regionStats[region] = result.Count
+	}
+
+	return regionStats, nil
+}
