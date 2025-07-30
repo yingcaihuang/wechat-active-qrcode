@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"wechat-active-qrcode/internal/models"
 	"wechat-active-qrcode/internal/services"
+	"wechat-active-qrcode/pkg/qrcode"
 
 	"github.com/gin-gonic/gin"
 )
@@ -726,6 +727,53 @@ func (h *ActiveQRCodeHandler) ToggleStaticQRStatus(c *gin.Context) {
 		Data: gin.H{
 			"id":     staticQR.ID,
 			"status": newStatus,
+		},
+	})
+}
+
+// ParseQRCode 解析上传的二维码图片
+func (h *ActiveQRCodeHandler) ParseQRCode(c *gin.Context) {
+	// 获取上传的文件
+	file, header, err := c.Request.FormFile("qrcode")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Success: false,
+			Message: "请选择要上传的二维码图片",
+		})
+		return
+	}
+
+	// 创建二维码解析器
+	parser := qrcode.NewParser()
+	
+	// 解析二维码
+	content, err := parser.ParseFromFile(file, header)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Success: false,
+			Message: fmt.Sprintf("二维码解析失败: %s", err.Error()),
+		})
+		return
+	}
+
+	// 验证是否为有效URL
+	if !parser.ValidateURL(content) {
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			Success: false,
+			Message: "解析的内容不是有效的URL地址",
+			Data: gin.H{
+				"content": content,
+			},
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.APIResponse{
+		Success: true,
+		Message: "二维码解析成功",
+		Data: gin.H{
+			"url":     content,
+			"content": content,
 		},
 	})
 }

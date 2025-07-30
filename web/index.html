@@ -691,7 +691,13 @@
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">目标URL <span class="text-danger">*</span></label>
-                                    <input type="url" class="form-control" id="staticQRTargetURL" placeholder="https://example.com" required>
+                                    <div class="input-group">
+                                        <input type="url" class="form-control" id="staticQRTargetURL" placeholder="https://example.com" required>
+                                        <button class="btn btn-outline-secondary" type="button" onclick="showQRUploadModal()">
+                                            <i class="bi bi-qr-code-scan me-1"></i>扫码填充
+                                        </button>
+                                    </div>
+                                    <div class="form-text">可以手动输入URL，或点击"扫码填充"上传二维码图片自动识别</div>
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">权重</label>
@@ -768,7 +774,13 @@
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">目标URL</label>
-                                    <input type="url" class="form-control" id="editStaticQRURL" placeholder="https://example.com" required>
+                                    <div class="input-group">
+                                        <input type="url" class="form-control" id="editStaticQRURL" placeholder="https://example.com" required>
+                                        <button class="btn btn-outline-secondary" type="button" onclick="showQRUploadModal('edit')">
+                                            <i class="bi bi-qr-code-scan me-1"></i>扫码填充
+                                        </button>
+                                    </div>
+                                    <div class="form-text">可以手动输入URL，或点击"扫码填充"上传二维码图片自动识别</div>
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">权重</label>
@@ -836,6 +848,58 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 二维码上传模态框 -->
+    <div class="modal fade" id="qrUploadModal" tabindex="-1" aria-labelledby="qrUploadModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="qrUploadModalLabel">上传二维码图片</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="qrCodeFile" class="form-label">选择二维码图片</label>
+                        <input type="file" class="form-control" id="qrCodeFile" accept="image/*" onchange="previewQRImage(this)">
+                        <div class="form-text">支持 JPG、PNG 格式的二维码图片</div>
+                    </div>
+                    
+                    <!-- 图片预览区域 -->
+                    <div id="qrPreviewArea" class="text-center mb-3" style="display: none;">
+                        <img id="qrPreviewImage" src="" alt="二维码预览" class="img-fluid" style="max-width: 200px; max-height: 200px; border: 1px solid #ddd; border-radius: 4px;">
+                    </div>
+
+                    <!-- 解析结果区域 -->
+                    <div id="qrParseResult" style="display: none;">
+                        <div class="alert alert-success" role="alert">
+                            <h6 class="alert-heading">
+                                <i class="bi bi-check-circle me-2"></i>解析成功
+                            </h6>
+                            <p class="mb-0">识别到的URL：</p>
+                            <code id="parsedURL"></code>
+                        </div>
+                    </div>
+
+                    <!-- 错误提示区域 -->
+                    <div id="qrParseError" class="alert alert-danger" role="alert" style="display: none;">
+                        <h6 class="alert-heading">
+                            <i class="bi bi-exclamation-triangle me-2"></i>解析失败
+                        </h6>
+                        <p class="mb-0" id="parseErrorMessage"></p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="parseQRCodeBtn" onclick="parseQRCode()" disabled>
+                        <i class="bi bi-qr-code-scan me-2"></i>解析二维码
+                    </button>
+                    <button type="button" class="btn btn-success" id="useQRCodeBtn" onclick="useQRCodeURL()" style="display: none;">
+                        <i class="bi bi-check-lg me-2"></i>使用此URL
+                    </button>
                 </div>
             </div>
         </div>

@@ -1321,3 +1321,157 @@ function loadSystemSettings() {
     }
 }
 
+// ===== 二维码上传功能 =====
+
+// 当前操作模式：'create' 或 'edit'
+let currentQRUploadMode = 'create';
+
+// 显示二维码上传模态框
+function showQRUploadModal(mode = 'create') {
+    currentQRUploadMode = mode;
+    
+    // 重置模态框状态
+    resetQRUploadModal();
+    
+    // 显示模态框
+    const modal = new bootstrap.Modal(document.getElementById('qrUploadModal'));
+    modal.show();
+}
+
+// 重置二维码上传模态框
+function resetQRUploadModal() {
+    // 清空文件选择
+    document.getElementById('qrCodeFile').value = '';
+    
+    // 隐藏预览区域
+    document.getElementById('qrPreviewArea').style.display = 'none';
+    document.getElementById('qrPreviewImage').src = '';
+    
+    // 隐藏结果和错误区域
+    document.getElementById('qrParseResult').style.display = 'none';
+    document.getElementById('qrParseError').style.display = 'none';
+    
+    // 重置按钮状态
+    document.getElementById('parseQRCodeBtn').disabled = true;
+    document.getElementById('useQRCodeBtn').style.display = 'none';
+    
+    // 清空解析结果
+    window.parsedQRCodeURL = null;
+}
+
+// 预览上传的图片
+function previewQRImage(input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        
+        // 检查文件类型
+        if (!file.type.startsWith('image/')) {
+            showAlert('请选择图片文件', 'error');
+            return;
+        }
+        
+        // 检查文件大小（限制5MB）
+        if (file.size > 5 * 1024 * 1024) {
+            showAlert('图片文件大小不能超过5MB', 'error');
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            // 显示预览图片
+            document.getElementById('qrPreviewImage').src = e.target.result;
+            document.getElementById('qrPreviewArea').style.display = 'block';
+            
+            // 启用解析按钮
+            document.getElementById('parseQRCodeBtn').disabled = false;
+            
+            // 隐藏之前的结果
+            document.getElementById('qrParseResult').style.display = 'none';
+            document.getElementById('qrParseError').style.display = 'none';
+            document.getElementById('useQRCodeBtn').style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+// 解析二维码
+async function parseQRCode() {
+    const fileInput = document.getElementById('qrCodeFile');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        showAlert('请先选择二维码图片', 'error');
+        return;
+    }
+    
+    // 禁用解析按钮，显示加载状态
+    const parseBtn = document.getElementById('parseQRCodeBtn');
+    const originalText = parseBtn.innerHTML;
+    parseBtn.disabled = true;
+    parseBtn.innerHTML = '<i class="spinner-border spinner-border-sm me-2" role="status"></i>解析中...';
+    
+    // 隐藏之前的结果
+    document.getElementById('qrParseResult').style.display = 'none';
+    document.getElementById('qrParseError').style.display = 'none';
+    document.getElementById('useQRCodeBtn').style.display = 'none';
+    
+    try {
+        // 创建FormData
+        const formData = new FormData();
+        formData.append('qrcode', file);
+        
+        // 发送请求
+        const token = localStorage.getItem('authToken');
+        const response = await fetch(`${API_BASE}/tools/parse-qrcode`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // 解析成功
+            window.parsedQRCodeURL = result.data.url;
+            document.getElementById('parsedURL').textContent = result.data.url;
+            document.getElementById('qrParseResult').style.display = 'block';
+            document.getElementById('useQRCodeBtn').style.display = 'inline-block';
+        } else {
+            // 解析失败
+            document.getElementById('parseErrorMessage').textContent = result.message || '解析失败';
+            document.getElementById('qrParseError').style.display = 'block';
+        }
+    } catch (error) {
+        console.error('Error parsing QR code:', error);
+        document.getElementById('parseErrorMessage').textContent = '网络错误，请重试';
+        document.getElementById('qrParseError').style.display = 'block';
+    } finally {
+        // 恢复按钮状态
+        parseBtn.disabled = false;
+        parseBtn.innerHTML = originalText;
+    }
+}
+
+// 使用解析出的URL
+function useQRCodeURL() {
+    if (!window.parsedQRCodeURL) {
+        showAlert('没有可用的URL', 'error');
+        return;
+    }
+    
+    // 根据当前模式填充对应的输入框
+    if (currentQRUploadMode === 'create') {
+        document.getElementById('staticQRTargetURL').value = window.parsedQRCodeURL;
+    } else if (currentQRUploadMode === 'edit') {
+        document.getElementById('editStaticQRURL').value = window.parsedQRCodeURL;
+    }
+    
+    // 关闭模态框
+    const modal = bootstrap.Modal.getInstance(document.getElementById('qrUploadModal'));
+    modal.hide();
+    
+    showAlert('URL填充成功', 'success');
+}
+

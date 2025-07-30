@@ -144,6 +144,14 @@ func (r *Router) SetupRoutes() *gin.Engine {
 			statistics.GET("/qrcodes/:id/records", r.statisticsHandler.GetScanRecords)
 		}
 
+		// 工具类路由（需要认证）
+		tools := api.Group("/tools")
+		tools.Use(r.authMiddleware.AuthRequired())
+		{
+			// 二维码解析
+			tools.POST("/parse-qrcode", r.activeQRCodeHandler.ParseQRCode)
+		}
+
 		// 公开路由（不需要认证）
 		public := api.Group("/public")
 		{
