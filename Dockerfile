@@ -1,5 +1,8 @@
 FROM golang:1.21-alpine AS builder
 
+# 安装编译依赖
+RUN apk --no-cache add gcc musl-dev sqlite-dev
+
 # 设置工作目录
 WORKDIR /app
 
@@ -18,7 +21,7 @@ RUN CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/server
 FROM alpine:latest
 
 # 安装必要的包
-RUN apk --no-cache add ca-certificates sqlite
+RUN apk --no-cache add ca-certificates sqlite curl
 
 # 创建应用目录
 WORKDIR /root/
