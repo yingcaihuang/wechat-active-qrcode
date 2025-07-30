@@ -40,7 +40,15 @@ func (r *Router) SetupRoutes() *gin.Engine {
 	router := gin.Default()
 
 	// CORS配置
-	router.Use(cors.Default())
+	config := cors.Config{
+		AllowOrigins:     []string{"*"}, // 允许所有域名，生产环境应该设置具体域名
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * 3600, // 12小时
+	}
+	router.Use(cors.New(config))
 
 	// 静态文件服务 - 管理后台
 	router.Static("/web", "./web")
@@ -51,6 +59,9 @@ func (r *Router) SetupRoutes() *gin.Engine {
 	router.StaticFile("/styles.css", "./web/styles.css")
 	router.StaticFile("/app.js", "./web/app.js")
 	router.StaticFile("/favicon.ico", "./web/favicon.ico")
+	
+	// 添加assets静态文件服务
+	router.Static("/assets", "./web/assets")
 
 	// 健康检查
 	router.GET("/health", func(c *gin.Context) {

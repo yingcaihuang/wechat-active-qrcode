@@ -279,3 +279,7 @@ func runActiveQRTests() {
 	fmt.Println("  - 重定向功能 ✓")
 	fmt.Println("  - API接口完整性 ✓")
 }
+
+func main() {
+	runActiveQRTests()
+}

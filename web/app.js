@@ -1120,5 +1120,87 @@ document.addEventListener('DOMContentLoaded', function() {
             copyToClipboard(shortcode);
         }
     });
+
+    // 系统设置表单处理
+    const settingsForm = document.getElementById('settingsForm');
+    if (settingsForm) {
+        settingsForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveSystemSettings();
+        });
+        
+        // 页面加载时从localStorage加载设置
+        loadSystemSettings();
+    }
 });
+
+// 保存系统设置
+function saveSystemSettings() {
+    const systemName = document.getElementById('systemName').value.trim();
+    const apiBaseUrl = document.getElementById('apiBaseUrl').value.trim();
+    
+    if (!systemName) {
+        showAlert('系统名称不能为空', 'error');
+        return;
+    }
+    
+    if (!apiBaseUrl) {
+        showAlert('API基础URL不能为空', 'error');
+        return;
+    }
+    
+    // 验证URL格式
+    try {
+        new URL(apiBaseUrl);
+    } catch (e) {
+        showAlert('API基础URL格式不正确，请输入有效的URL', 'error');
+        return;
+    }
+    
+    // 保存到localStorage
+    const settings = {
+        systemName: systemName,
+        apiBaseUrl: apiBaseUrl,
+        savedAt: new Date().toISOString()
+    };
+    
+    localStorage.setItem('systemSettings', JSON.stringify(settings));
+    
+    // 更新全局变量
+    BASE_URL = apiBaseUrl;
+    API_BASE = `${apiBaseUrl}/api`;
+    
+    console.log('Settings saved:', { BASE_URL, API_BASE });
+    showAlert('系统设置保存成功！', 'success');
+}
+
+// 加载系统设置
+function loadSystemSettings() {
+    try {
+        const savedSettings = localStorage.getItem('systemSettings');
+        if (savedSettings) {
+            const settings = JSON.parse(savedSettings);
+            
+            // 更新表单字段
+            const systemNameInput = document.getElementById('systemName');
+            const apiBaseUrlInput = document.getElementById('apiBaseUrl');
+            
+            if (systemNameInput && settings.systemName) {
+                systemNameInput.value = settings.systemName;
+            }
+            
+            if (apiBaseUrlInput && settings.apiBaseUrl) {
+                apiBaseUrlInput.value = settings.apiBaseUrl;
+                
+                // 更新全局变量
+                BASE_URL = settings.apiBaseUrl;
+                API_BASE = `${settings.apiBaseUrl}/api`;
+                
+                console.log('Settings loaded from localStorage:', { BASE_URL, API_BASE });
+            }
+        }
+    } catch (e) {
+        console.error('Error loading system settings:', e);
+    }
+}
 
