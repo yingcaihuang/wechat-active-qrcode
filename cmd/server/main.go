@@ -56,7 +56,7 @@ func main() {
 	// 初始化服务
 	log.Println("Initializing services...")
 	qrCodeService := services.NewQRCodeService(db, qrGenerator)
-	activeQRCodeService := services.NewActiveQRCodeService(db, qrGenerator)
+	activeQRCodeService := services.NewActiveQRCodeService(db, qrGenerator, cfg)
 	statisticsService := services.NewStatisticsService(db)
 	authService := services.NewAuthService(db, jwtService)
 	log.Println("Services initialized")

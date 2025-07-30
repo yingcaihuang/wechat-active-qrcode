@@ -8,6 +8,7 @@ import (
 	"math/big"
 	"strings"
 	"time"
+	"wechat-active-qrcode/internal/config"
 	"wechat-active-qrcode/internal/models"
 	"wechat-active-qrcode/pkg/qrcode"
 
@@ -27,12 +28,14 @@ func (e *QRCodeError) Error() string {
 type ActiveQRCodeService struct {
 	db          *gorm.DB
 	qrGenerator *qrcode.Generator
+	config      *config.Config
 }
 
-func NewActiveQRCodeService(db *gorm.DB, qrGenerator *qrcode.Generator) *ActiveQRCodeService {
+func NewActiveQRCodeService(db *gorm.DB, qrGenerator *qrcode.Generator, cfg *config.Config) *ActiveQRCodeService {
 	return &ActiveQRCodeService{
 		db:          db,
 		qrGenerator: qrGenerator,
+		config:      cfg,
 	}
 }
 
@@ -63,7 +66,7 @@ func (s *ActiveQRCodeService) CreateActiveQRCode(req *models.ActiveQRCodeCreateR
 	}
 
 	// 生成活码二维码图片（指向中转页面）
-	redirectURL := fmt.Sprintf("http://localhost:8083/r/%s", shortCode)
+	redirectURL := fmt.Sprintf("%s/r/%s", s.config.Server.BaseURL, shortCode)
 	qrPath, err := s.qrGenerator.GenerateQRCode(redirectURL, fmt.Sprintf("active_%d.png", activeQR.ID))
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate QR code image: %v", err)
@@ -459,7 +462,7 @@ func (s *ActiveQRCodeService) GetActiveQRCodeImage(id uint) ([]byte, error) {
 	}
 
 	// 重新生成二维码图片
-	redirectURL := fmt.Sprintf("http://localhost:8083/r/%s", activeQR.ShortCode)
+	redirectURL := fmt.Sprintf("%s/r/%s", s.config.Server.BaseURL, activeQR.ShortCode)
 
 	// 如果有现有的文件路径，尝试读取
 	if activeQR.QRCodePath != "" {

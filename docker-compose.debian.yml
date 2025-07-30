@@ -13,7 +13,7 @@ services:
     environment:
       - GIN_MODE=release
       - TZ=Asia/Shanghai
-      - BASE_URL=http://localhost:8083
+      - BASE_URL=${BASE_URL:-http://localhost:8083}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8083/health"] 
